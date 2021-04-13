@@ -51,6 +51,7 @@ FourXThreeMDP = {
 def maxutil(current_state: int, mdp: dict, state_utils: dict) -> int:
     successors = mdp['stategraph'][current_state]
     # Return zero if current_state is a terminal state
+    #print(f"Successor states: {successors}")
     if successors is None:
         return 0
 
@@ -62,6 +63,7 @@ def maxutil(current_state: int, mdp: dict, state_utils: dict) -> int:
         # Scoring each possible outcome state
         for direction, prob in enumerate(mdp['paction'][action]):
             target_state = successors[direction]
+            #print(f"Target state: {target_state}")
             u += prob * state_utils[target_state]
 
         if utilmax is None or (u > utilmax):
@@ -112,13 +114,10 @@ def value_iteration(mdp, gamma, r_fn, quiet=True, delta=.0001, n=-1):
     U = argmax(SUM(P(s` | a, s) U(s`)
     """
 
-    # Initial utility of each state is the reward function (?)
-    state_utilities = {
-        1: r_fn(1)
-        , 2: r_fn(2)
-        , 3: r_fn(3)
-        , 4: r_fn(4)
-    }
+    # Initial utility of each state is the reward function
+    state_utilities = dict()
+    for state in mdp['stategraph'].keys():
+        state_utilities[state] = r_fn(state)
 
     # Preparing for iteration
     iterated_utilities = dict(state_utilities)  # store for the "simultaneous" utility updates
