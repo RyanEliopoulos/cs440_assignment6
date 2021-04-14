@@ -1,3 +1,9 @@
+"""
+    Rewrite all of this using Decimal.decimal
+
+"""
+
+
 import pprint
 import random
 from math import log, sqrt
@@ -182,6 +188,8 @@ def bestmove(state: tuple, mdp: dict, policy_utilities: dict):
     """
         Returns a tuple (utility of best move, best move) for the current state if there are moves to be made.
         Otherwise, returns (None, None)
+
+        Basically like maxutil except doesn't return 0 when there are no successors.
     """
 
     successors = mdp['stategraph'][state]
@@ -222,8 +230,8 @@ def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
      gamma - a discount rate
      r_fn  - a reward function that maps states -> immediate rewards
      quiet - if True, supress all output in this function
-     vit   - the number of iterations for the value update step
-     n     - the number of iterations for policy update
+     vit   - the number of iterations for the value update step  (change loop bound?)
+     n     - the number of iterations for policy update (in the policy_update fnx)
 
      the stopping criteria for policy iteration should have the following semantics:
 
@@ -268,13 +276,13 @@ def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
 
             if max_u > (policy_utilities[state] - r_fn(state)):
                 old_val = policy_utilities[state]
-                print(f'Updated {state}. old val: {old_val}, new val: {max_u}')
+                #print(f'Updated {state}. old val: {old_val}, new val: {max_u}')
                 old_action = policy[state]
-                print(f'From action {old_action} to new action {best_action}')
+                #print(f'From action {old_action} to new action {best_action}')
                 policy[state] = best_action
                 unchanged = False
 
-    return policy_utilities
+    return policy
 
 
 if __name__ == "__main__":

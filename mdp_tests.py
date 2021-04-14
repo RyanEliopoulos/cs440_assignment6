@@ -60,10 +60,26 @@ class MDPTestCase(unittest.TestCase):
             expected_outcome = outcomes[i]
             self.assertAlmostEqual(d[state], expected_outcome, 4, f'After 1 iteration, expected {expected_outcome} in state {state}')
 
+        d3 = value_iteration(FourXThreeMDP, 1.0, rfn, True)
+        print(d3)
+
     def test_policy_2x2(self):
+        env = TwoXTwoMDP
+        rfn = [None, -0.04, -0.04, 1, -1].__getitem__
+        pi = {1: 'R', 2: 'D'}
+        d = policy_iteration(env, 1.0, rfn, pi, True)
+        self.assertEqual(d[1], 'U')
+        self.assertEqual(d[2], 'R')
+
+    def test_policy_4x3(self):
+        """
+            Floating point math might be throwing this one off
+
+        :return:
+        """
         env = FourXThreeMDP
         rfn = lambda s: {(4, 2): -1, (4, 3): 1}.get(s, -0.04)
         pi = {s:'L' for s in env['stategraph']}
-        d = policy_iteration(FourXThreeMDP, 1.0, rfn, pi, True, viterations=1)
+        d = policy_iteration(FourXThreeMDP, 1.0, rfn, pi, True, viterations=5)
 
         print(d)
