@@ -48,7 +48,15 @@ FourXThreeMDP = {
 }
 
 
-def maxutil(current_state: int, mdp: dict, state_utils: dict) -> int:
+def maxutil(current_state: int, mdp: dict, state_utils: dict) -> float:
+    """
+        Returns the utility value of the optimal move
+
+    :param current_state:
+    :param mdp:
+    :param state_utils:
+    :return:
+    """
     successors = mdp['stategraph'][current_state]
     # Return zero if current_state is a terminal state
     #print(f"Successor states: {successors}")
@@ -68,6 +76,7 @@ def maxutil(current_state: int, mdp: dict, state_utils: dict) -> int:
 
         if utilmax is None or (u > utilmax):
             utilmax = u
+            bestaction = action
 
     return utilmax
 
@@ -103,17 +112,6 @@ def value_iteration(mdp, gamma, r_fn, quiet=True, delta=.0001, n=-1):
       a map of {state -> utilities}
     """
 
-
-    """
-    Utility of the current state is equal to the sum of the
-    U = current_reward
-    
-    for action in mdp['actions']:  # Evaluate each action
-        tmp_u = argmax(SUM(P(s` | a, s) U(s`)
-        
-    U = argmax(SUM(P(s` | a, s) U(s`)
-    """
-
     # Initial utility of each state is the reward function
     state_utilities = dict()
     for state in mdp['stategraph'].keys():
@@ -121,7 +119,11 @@ def value_iteration(mdp, gamma, r_fn, quiet=True, delta=.0001, n=-1):
 
     # Preparing for iteration
     iterated_utilities = dict(state_utilities)  # store for the "simultaneous" utility updates
-    i = 0
+    if n == -1:
+        i = -2
+    else:
+        i = 0
+
     while i < n:
         iteration_improvement = 0
         for state in mdp['stategraph']:
@@ -134,9 +136,72 @@ def value_iteration(mdp, gamma, r_fn, quiet=True, delta=.0001, n=-1):
 
         # Preparing for next loop
         state_utilities = dict(iterated_utilities)  # dict call ensures copy instead of reference
-        i += 1
+        if n != -1:
+            i += 1
+
+    if not quiet:
+        print(f'There were {i} iterations')
 
     return state_utilities
+
+
+def policy_evaluate(mdp, r_fn, gamma, policy, policy_utilities, viterations) -> dict:
+    """
+        Utility of each state depends on:
+                                            1). the policy, informing the course of action
+                                            2). the potential outcomes of each prescribed action
+
+        Want to return a {state: utility} map
+    """
+
+    # Updating state utility values
+    updated_utils = dict()
+    for x in range(viterations):
+        for state in mdp['stategraph'].keys():
+            #print(f'This state now: {state}')
+            successors = mdp['stategraph'][state]  # possible destination states
+            if not successors:
+                # No where to go. Utility is static
+                updated_utils[state] = r_fn(state)
+                continue
+
+            # Tallying utility of the prescribed action
+            new_u = 0
+            action = policy[state]
+            for direction_index, likelihood in enumerate(mdp['paction'][action]):
+                target_state = mdp['stategraph'][state][direction_index]
+                new_u += likelihood * policy_utilities[target_state]
+
+            updated_utils[state] = r_fn(state) + (gamma * new_u)
+        policy_utilities = updated_utils
+
+    return updated_utils
+
+
+def bestmove(state: tuple, mdp: dict, policy_utilities: dict):
+    """
+        Returns a tuple (utility of best move, best move) for the current state if there are moves to be made.
+        Otherwise, returns (None, None)
+    """
+
+    successors = mdp['stategraph'][state]
+    if not successors:
+        return None, None
+
+    best_action = None
+    max_u = None
+    # Evaluating each action
+    for action in mdp['actions']:
+        u = 0
+        for direction, likelihood in enumerate(mdp['paction'][action]):
+            target_state = mdp['stategraph'][state][direction]
+            u += likelihood * policy_utilities[target_state]
+
+        if max_u is None or u > max_u:
+            max_u = u
+            best_action = action
+
+    return max_u, best_action
 
 
 def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
@@ -168,8 +233,48 @@ def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
       a map of {state -> actions}
     """
 
-    pass
 
+
+
+    """
+        We just make up a default policy (always go up!) and then use that as the basis to improve against?
+        ??????????????
+        
+       
+
+             
+        
+        while True:
+            state_utilities = PolicyEvaluate(pi, 
+            # Get {'state': 'utility'} dict for each state based on the policy?
+    """
+
+    # set initial utility values to 0
+    policy_utilities = dict()
+    for state in mdp['stategraph'].keys():
+        policy_utilities[state] = 0
+
+    # Beginning improvement loop
+    unchanged = False
+    while not unchanged:
+        policy_utilities = policy_evaluate(mdp, r_fn, gamma, policy, policy_utilities, viterations)
+        #print(f"policy utilities: {policy_utilities}")
+        unchanged = True
+        for state in mdp['stategraph']:
+            # Determining the best action for this state
+            max_u, best_action = bestmove(state, mdp, policy_utilities)
+            if max_u is None:  # No move to make
+                continue
+
+            if max_u > (policy_utilities[state] - r_fn(state)):
+                old_val = policy_utilities[state]
+                print(f'Updated {state}. old val: {old_val}, new val: {max_u}')
+                old_action = policy[state]
+                print(f'From action {old_action} to new action {best_action}')
+                policy[state] = best_action
+                unchanged = False
+
+    return policy_utilities
 
 
 if __name__ == "__main__":

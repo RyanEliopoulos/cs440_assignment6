@@ -60,3 +60,10 @@ class MDPTestCase(unittest.TestCase):
             expected_outcome = outcomes[i]
             self.assertAlmostEqual(d[state], expected_outcome, 4, f'After 1 iteration, expected {expected_outcome} in state {state}')
 
+    def test_policy_2x2(self):
+        env = FourXThreeMDP
+        rfn = lambda s: {(4, 2): -1, (4, 3): 1}.get(s, -0.04)
+        pi = {s:'L' for s in env['stategraph']}
+        d = policy_iteration(FourXThreeMDP, 1.0, rfn, pi, True, viterations=1)
+
+        print(d)
