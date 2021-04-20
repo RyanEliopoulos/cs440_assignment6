@@ -125,8 +125,10 @@ def value_iteration(mdp, gamma, r_fn, quiet=True, delta=.0001, n=-1):
 
     # Preparing for iteration
     iterated_utilities = dict(state_utilities)  # store for the "simultaneous" utility updates
+
+    # hacky way to toggle the exit condition.
     if n == -1:
-        i = -2
+        i = -2  # Will not increment if n == -1
     else:
         i = 0
 
@@ -150,6 +152,8 @@ def value_iteration(mdp, gamma, r_fn, quiet=True, delta=.0001, n=-1):
 
     return state_utilities
 
+
+## Policy Evaluation below
 
 def policy_evaluate(mdp, r_fn, gamma, policy, policy_utilities, viterations) -> dict:
     """
@@ -212,7 +216,7 @@ def bestmove(state: tuple, mdp: dict, policy_utilities: dict):
     return max_u, best_action
 
 
-def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
+def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5, n=-1):
     """
     __ Part 2: Implement this __
 
@@ -243,20 +247,6 @@ def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
 
 
 
-
-    """
-        We just make up a default policy (always go up!) and then use that as the basis to improve against?
-        ??????????????
-        
-       
-
-             
-        
-        while True:
-            state_utilities = PolicyEvaluate(pi, 
-            # Get {'state': 'utility'} dict for each state based on the policy?
-    """
-
     # set initial utility values to 0
     policy_utilities = dict()
     for state in mdp['stategraph'].keys():
@@ -264,7 +254,12 @@ def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
 
     # Beginning improvement loop
     unchanged = False
-    while not unchanged:
+    if n == -1:
+        i = -2
+    else:
+        i = 0
+
+    while (not unchanged) and (i < n):
         policy_utilities = policy_evaluate(mdp, r_fn, gamma, policy, policy_utilities, viterations)
         #print(f"policy utilities: {policy_utilities}")
         unchanged = True
@@ -282,6 +277,9 @@ def policy_iteration(mdp, gamma, r_fn, policy, quiet=True, viterations=5):
                 policy[state] = best_action
                 unchanged = False
 
+        if n > -1:
+            i += 1
+        print(f'i is: {i}')
     return policy
 
 
